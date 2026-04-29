@@ -1,0 +1,8 @@
+flask
+flask-cors
+nanoid
+requests
+pymongo
+cryptography
+marshmallow
+python-dotenv
