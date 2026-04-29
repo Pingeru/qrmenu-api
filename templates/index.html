@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>QR Menu Demo</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+
+    <div class="container">
+        <div class="header">
+            <h1>Cajun Corner</h1>
+        </div>
+
+        <button id="back-btn" onclick="showCategories()">← Back to Categories</button>
+
+        <div id="category-view" class="grid"></div>
+        <div id="product-view" class="grid" style="display: none;"></div>
+    </div>
+
+    <script>
+        const backendData = {{ data | tojson }};
+    </script>
+    
+    <script src="{{ url_for('static', filename='script.js') }}"></script>
+    
+</body>
+</html>
