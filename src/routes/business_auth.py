@@ -4,6 +4,7 @@ import os
 import jwt
 from bson import ObjectId
 from flask import Blueprint, jsonify, request
+from flask import current_app
 from pymongo.errors import PyMongoError
 
 from src.middleware.auth_middleware import authenticate_request
@@ -43,11 +44,14 @@ def register_business():
             "name": name,
             "email": email,
             "password_hash": hash_password(password),
-            "qr_base_url": qr_base_url,
             "created_at": dt.datetime.now(dt.UTC),
         }
+        if qr_base_url:
+            business_doc["qr_base_url"] = qr_base_url
         result = businesses.insert_one(business_doc)
-    except PyMongoError:
+    except PyMongoError as exc:
+        if current_app.testing:
+            return jsonify({"error": "Database error occurred", "details": str(exc)}), 500
         return jsonify({"error": "Database error occurred"}), 500
 
     business_id = str(result.inserted_id)
@@ -158,43 +162,53 @@ def edit_business():
         return jsonify({"error": "Access forbidden"}), 403
 
     data = request.get_json(silent=True) or {}
-    update_doc = {}
+    set_doc = {}
+    unset_doc = {}
 
     if "name" in data:
         name = (data.get("name") or "").strip()
         if not name:
             return jsonify({"error": "Invalid name"}), 400
-        update_doc["name"] = name
+        set_doc["name"] = name
 
     if "email" in data:
         email = normalize_email(data.get("email") or "")
         if not email:
             return jsonify({"error": "Invalid email"}), 400
-        update_doc["email"] = email
+        set_doc["email"] = email
 
     if "password" in data:
         password = data.get("password") or ""
         if not password:
             return jsonify({"error": "Invalid password"}), 400
-        update_doc["password_hash"] = hash_password(password)
+        set_doc["password_hash"] = hash_password(password)
 
     if "qr_base_url" in data:
         qr_base_url = (data.get("qr_base_url") or "").strip()
-        update_doc["qr_base_url"] = qr_base_url or None
+        if qr_base_url:
+            set_doc["qr_base_url"] = qr_base_url
+        else:
+            unset_doc["qr_base_url"] = ""
 
-    if not update_doc:
+    update_ops = {}
+    if set_doc:
+        update_ops["$set"] = set_doc
+    if unset_doc:
+        update_ops["$unset"] = unset_doc
+
+    if not update_ops:
         return jsonify({"error": "No changes provided"}), 400
 
     business_id = auth_result.get("_id")
     mongo_id = ObjectId(business_id) if ObjectId.is_valid(business_id) else business_id
 
     try:
-        if "email" in update_doc:
-            existing = businesses.find_one({"email": update_doc["email"], "_id": {"$ne": mongo_id}})
+        if "email" in set_doc:
+            existing = businesses.find_one({"email": set_doc["email"], "_id": {"$ne": mongo_id}})
             if existing:
                 return jsonify({"error": "Email already registered"}), 409
 
-        businesses.update_one({"_id": mongo_id}, {"$set": update_doc})
+        businesses.update_one({"_id": mongo_id}, update_ops)
         business_doc = businesses.find_one({"_id": mongo_id})
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
