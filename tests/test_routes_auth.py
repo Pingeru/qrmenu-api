@@ -21,8 +21,7 @@ class AuthRouteTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        if getattr(cls, "mongo_client", None):
-            cls.mongo_client.close()
+        pass  # MongoDB client is managed by conftest.py
 
     def setUp(self):
         self.created_business_emails = []
@@ -45,7 +44,6 @@ class AuthRouteTests(unittest.TestCase):
             "name": "Test Business",
             "email": email,
             "password": "Password123!",
-            "qr_base_url": "https://example.com/qr",
         }
         register_response = self.client.post(
             "/api/v1/business/auth/register",

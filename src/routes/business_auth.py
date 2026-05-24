@@ -3,8 +3,7 @@ import os
 
 import jwt
 from bson import ObjectId
-from flask import Blueprint, jsonify, request
-from flask import current_app
+from flask import Blueprint, jsonify, request, current_app
 from pymongo.errors import PyMongoError
 
 from src.middleware.auth_middleware import authenticate_request
@@ -21,7 +20,7 @@ from src.utils.database_helper import db
 
 business_auth_bp = Blueprint("business_auth", __name__)
 
-BUSINESS_FIELDS = ["name", "email", "qr_base_url"]
+BUSINESS_FIELDS = ["name", "email"]
 businesses = db["businesses"]
 
 
@@ -31,8 +30,6 @@ def register_business():
     name = (data.get("name") or "").strip()
     email = normalize_email(data.get("email") or "")
     password = data.get("password") or ""
-    qr_base_url = (data.get("qr_base_url") or "").strip() or None
-
     if not name or not email or not password:
         return jsonify({"error": "Missing required fields"}), 400
 
@@ -46,8 +43,6 @@ def register_business():
             "password_hash": hash_password(password),
             "created_at": dt.datetime.now(dt.UTC),
         }
-        if qr_base_url:
-            business_doc["qr_base_url"] = qr_base_url
         result = businesses.insert_one(business_doc)
     except PyMongoError as exc:
         if current_app.testing:
@@ -182,13 +177,6 @@ def edit_business():
         if not password:
             return jsonify({"error": "Invalid password"}), 400
         set_doc["password_hash"] = hash_password(password)
-
-    if "qr_base_url" in data:
-        qr_base_url = (data.get("qr_base_url") or "").strip()
-        if qr_base_url:
-            set_doc["qr_base_url"] = qr_base_url
-        else:
-            unset_doc["qr_base_url"] = ""
 
     update_ops = {}
     if set_doc:

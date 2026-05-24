@@ -3,7 +3,7 @@ QR Menu Builder Backend API
 
 ## Business Auth Endpoints
 Base path: `/api/v1/business/auth`
-- `POST /register` (name, email, password, qr_base_url)
+-- `POST /register` (name, email, password)
 - `POST /login` (email, password)
 - `POST /refresh` (refresh_token)
 - `PUT /edit` (access_token + fields to update)
