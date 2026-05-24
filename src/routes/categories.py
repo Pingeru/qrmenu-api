@@ -63,12 +63,8 @@ def create_category():
 
 @categories_bp.route("", methods=["GET"])
 def list_categories():
-    auth_error, business_id = _require_business()
-    if auth_error:
-        return auth_error
-
     try:
-        category_docs = list(categories.find({"business_id": business_id}).sort("created_at", 1))
+        category_docs = list(categories.find({}).sort("created_at", 1))
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
@@ -80,16 +76,12 @@ def list_categories():
 
 @categories_bp.route("/<category_id>", methods=["GET"])
 def get_category(category_id: str):
-    auth_error, business_id = _require_business()
-    if auth_error:
-        return auth_error
-
     if not ObjectId.is_valid(category_id):
         return jsonify({"error": "Invalid category id"}), 400
 
     mongo_id = ObjectId(category_id)
     try:
-        category_doc = categories.find_one({"_id": mongo_id, "business_id": business_id})
+        category_doc = categories.find_one({"_id": mongo_id})
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 

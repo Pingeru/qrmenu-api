@@ -91,19 +91,23 @@ class CategoryRouteTests(unittest.TestCase):
 
         list_response = self.client.get(
             "/api/v1/business/categories",
-            headers={"Authorization": f"Bearer {access_token}"},
         )
         self.assertEqual(list_response.status_code, 200)
         list_data = list_response.get_json()
         self.assertTrue(any(cat["_id"] == category_id for cat in list_data["categories"]))
 
+        public_list_response = self.client.get("/api/v1/business/categories")
+        self.assertEqual(public_list_response.status_code, 200)
+
         get_response = self.client.get(
             f"/api/v1/business/categories/{category_id}",
-            headers={"Authorization": f"Bearer {access_token}"},
         )
         self.assertEqual(get_response.status_code, 200)
         get_data = get_response.get_json()
         self.assertEqual(get_data["category"]["name"], "Appetizers")
+
+        public_get_response = self.client.get(f"/api/v1/business/categories/{category_id}")
+        self.assertEqual(public_get_response.status_code, 200)
 
         update_response = self.client.put(
             f"/api/v1/business/categories/{category_id}",
