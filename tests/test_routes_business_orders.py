@@ -7,7 +7,7 @@ from bson import ObjectId
 from dotenv import load_dotenv
 
 
-class OrderRouteTests(unittest.TestCase):
+class BusinessOrderRouteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         load_dotenv()
@@ -139,7 +139,7 @@ class OrderRouteTests(unittest.TestCase):
             json={
                 "business_id": business_id,
                 "table_number": "A1",
-                "items": [{"product_id": product_id, "quantity": 2}],
+                "items": [{"product_id": product_id, "quantity": 1}],
             },
             headers={"Authorization": f"Bearer {access_token}"},
         )
@@ -151,24 +151,7 @@ class OrderRouteTests(unittest.TestCase):
         self.created_order_ids.append(ObjectId(order_id))
         return order_id
 
-    def test_create_order_requires_auth(self):
-        business_email = self._unique_email("biz")
-        business_token, business_id = self._register_business(business_email)
-        category_id = self._create_category(business_token)
-        product_id = self._create_product(business_token, category_id)
-
-        response = self.client.post(
-            "/api/v1/client/orders",
-            json={
-                "business_id": business_id,
-                "table_number": "A1",
-                "items": [{"product_id": product_id, "quantity": 1}],
-            },
-            headers={"Authorization": "Bearer invalid_token"},
-        )
-        self.assertEqual(response.status_code, 401)
-
-    def test_create_order_validates_business_ownership(self):
+    def test_list_business_orders_filters_by_time_and_business(self):
         business_email_1 = self._unique_email("biz1")
         business_token_1, business_id_1 = self._register_business(business_email_1)
         category_id_1 = self._create_category(business_token_1)
@@ -182,45 +165,29 @@ class OrderRouteTests(unittest.TestCase):
         client_email = self._unique_email("client")
         client_token = self._register_client(client_email)
 
-        response = self.client.post(
-            "/api/v1/client/orders",
-            json={
-                "business_id": business_id_1,
-                "table_number": "A1",
-                "items": [
-                    {"product_id": product_id_1, "quantity": 1},
-                    {"product_id": product_id_2, "quantity": 1},
-                ],
-            },
-            headers={"Authorization": f"Bearer {client_token}"},
+        recent_order_id = self._create_order(client_token, business_id_1, product_id_1)
+        old_order_id = self._create_order(client_token, business_id_1, product_id_1)
+        other_business_order_id = self._create_order(client_token, business_id_2, product_id_2)
+
+        old_timestamp = dt.datetime.now(dt.UTC) - dt.timedelta(hours=13)
+        self.orders.update_one(
+            {"_id": ObjectId(old_order_id)},
+            {"$set": {"created_at": old_timestamp}},
         )
-        self.assertEqual(response.status_code, 400)
-
-    def test_list_orders_returns_only_user_orders(self):
-        business_email = self._unique_email("biz")
-        business_token, business_id = self._register_business(business_email)
-        category_id = self._create_category(business_token)
-        product_id = self._create_product(business_token, category_id)
-
-        client_email_1 = self._unique_email("client")
-        client_token_1 = self._register_client(client_email_1)
-        order_id_1 = self._create_order(client_token_1, business_id, product_id)
-
-        client_email_2 = self._unique_email("client")
-        client_token_2 = self._register_client(client_email_2)
-        order_id_2 = self._create_order(client_token_2, business_id, product_id)
 
         response = self.client.get(
-            "/api/v1/client/orders",
-            headers={"Authorization": f"Bearer {client_token_1}"},
+            "/api/v1/business/orders",
+            headers={"Authorization": f"Bearer {business_token_1}"},
         )
         self.assertEqual(response.status_code, 200)
         orders = response.get_json()["orders"]
-        returned_ids = {order["_id"] for order in orders}
-        self.assertIn(order_id_1, returned_ids)
-        self.assertNotIn(order_id_2, returned_ids)
+        returned_ids = [order["_id"] for order in orders]
 
-    def test_list_orders_returns_newest_first(self):
+        self.assertIn(recent_order_id, returned_ids)
+        self.assertNotIn(old_order_id, returned_ids)
+        self.assertNotIn(other_business_order_id, returned_ids)
+
+    def test_update_order_status_only(self):
         business_email = self._unique_email("biz")
         business_token, business_id = self._register_business(business_email)
         category_id = self._create_category(business_token)
@@ -228,26 +195,17 @@ class OrderRouteTests(unittest.TestCase):
 
         client_email = self._unique_email("client")
         client_token = self._register_client(client_email)
+        order_id = self._create_order(client_token, business_id, product_id)
 
-        older_order_id = self._create_order(client_token, business_id, product_id)
-        newer_order_id = self._create_order(client_token, business_id, product_id)
-
-        self.orders.update_one(
-            {"_id": ObjectId(older_order_id)},
-            {"$set": {"created_at": dt.datetime.now(dt.UTC) - dt.timedelta(hours=1)}},
-        )
-
-        response = self.client.get(
-            "/api/v1/client/orders",
-            headers={"Authorization": f"Bearer {client_token}"},
+        response = self.client.put(
+            f"/api/v1/business/orders/{order_id}",
+            json={"status": "preparing"},
+            headers={"Authorization": f"Bearer {business_token}"},
         )
         self.assertEqual(response.status_code, 200)
-        orders = response.get_json()["orders"]
-        self.assertGreaterEqual(len(orders), 2)
-        self.assertEqual(orders[0]["_id"], newer_order_id)
-        self.assertEqual(orders[1]["_id"], older_order_id)
+        self.assertEqual(response.get_json()["order"]["status"], "preparing")
 
-    def test_cancel_order_only_when_placed(self):
+    def test_delete_order_removes_entry(self):
         business_email = self._unique_email("biz")
         business_token, business_id = self._register_business(business_email)
         category_id = self._create_category(business_token)
@@ -258,18 +216,11 @@ class OrderRouteTests(unittest.TestCase):
         order_id = self._create_order(client_token, business_id, product_id)
 
         response = self.client.delete(
-            f"/api/v1/client/orders/{order_id}",
-            headers={"Authorization": f"Bearer {client_token}"},
+            f"/api/v1/business/orders/{order_id}",
+            headers={"Authorization": f"Bearer {business_token}"},
         )
         self.assertEqual(response.status_code, 200)
-        self.assertEqual(response.get_json()["order"]["status"], "cancelled")
-
-        self.orders.update_one({"_id": ObjectId(order_id)}, {"$set": {"status": "preparing"}})
-        response = self.client.delete(
-            f"/api/v1/client/orders/{order_id}",
-            headers={"Authorization": f"Bearer {client_token}"},
-        )
-        self.assertEqual(response.status_code, 400)
+        self.assertIsNone(self.orders.find_one({"_id": ObjectId(order_id)}))
 
 
 if __name__ == "__main__":

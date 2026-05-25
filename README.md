@@ -30,3 +30,10 @@ Base path: `/api/v1/client/orders`
 - `POST /` (Authorization: Bearer access_token, business_id, table_number, items)
 - `GET /` (Authorization: Bearer access_token)
 - `DELETE /:order_id` (Authorization: Bearer access_token)
+
+## Business Orders Endpoints
+Base path: `/api/v1/business/orders`
+- `GET /` (Authorization: Bearer access_token)
+- `PUT /:order_id` (Authorization: Bearer access_token, status)
+- `DELETE /:order_id` (Authorization: Bearer access_token)
+

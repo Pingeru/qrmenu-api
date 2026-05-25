@@ -153,7 +153,7 @@ def list_orders():
         return auth_error
 
     try:
-        order_docs = list(orders.find({"user_id": user_id}).sort("created_at", -1))
+        order_docs = list(orders.find({"user_id": user_id}).sort([("created_at", -1), ("_id", -1)]))
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
