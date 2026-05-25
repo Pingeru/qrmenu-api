@@ -24,3 +24,9 @@ Base path: `/api/v1/business/categories`
 - `GET /:category_id` (Authorization: Bearer access_token)
 - `PUT /:category_id` (Authorization: Bearer access_token, name)
 - `DELETE /:category_id` (Authorization: Bearer access_token)
+
+## Orders Endpoints
+Base path: `/api/v1/client/orders`
+- `POST /` (Authorization: Bearer access_token, business_id, table_number, items)
+- `GET /` (Authorization: Bearer access_token)
+- `DELETE /:order_id` (Authorization: Bearer access_token)

@@ -14,11 +14,13 @@ from src.routes.business_auth import business_auth_bp
 from src.routes.client_auth import client_auth_bp
 from src.routes.categories import categories_bp
 from src.routes.products import products_bp
+from src.routes.client_orders import client_orders_bp
 
 app.register_blueprint(business_auth_bp, url_prefix="/api/v1/business/auth")
 app.register_blueprint(client_auth_bp, url_prefix="/api/v1/client/auth")
 app.register_blueprint(categories_bp, url_prefix="/api/v1/business/categories")
 app.register_blueprint(products_bp, url_prefix="/api/v1/business/products")
+app.register_blueprint(client_orders_bp, url_prefix="/api/v1/client/orders")
 
 if __name__ == "__main__":
     app.run(debug=True, host="0.0.0.0", port=API_PORT)
