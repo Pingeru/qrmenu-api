@@ -25,6 +25,24 @@ def _require_business():
     return None, mongo_id
 
 
+def _get_optional_business_id():
+    auth_header = request.headers.get("Authorization", "")
+    body = request.get_json(silent=True) or {}
+    if not auth_header and not body.get("access_token"):
+        return None, None
+
+    auth_result = authenticate_request()
+    if isinstance(auth_result, tuple):
+        return auth_result, None
+
+    if auth_result.get("user_type") != "business":
+        return None, None
+
+    business_id = auth_result.get("_id")
+    mongo_id = ObjectId(business_id) if ObjectId.is_valid(business_id) else business_id
+    return None, mongo_id
+
+
 def _serialize_category(category_doc: dict) -> dict:
     created_at = category_doc.get("created_at")
     return {
@@ -63,8 +81,14 @@ def create_category():
 
 @categories_bp.route("", methods=["GET"])
 def list_categories():
+    auth_error, business_id = _get_optional_business_id()
+    if auth_error:
+        return auth_error
+
+    query = {"business_id": business_id} if business_id is not None else {}
+
     try:
-        category_docs = list(categories.find({}).sort("created_at", 1))
+        category_docs = list(categories.find(query).sort("created_at", 1))
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
@@ -79,6 +103,10 @@ def get_category(category_id: str):
     if not ObjectId.is_valid(category_id):
         return jsonify({"error": "Invalid category id"}), 400
 
+    auth_error, business_id = _get_optional_business_id()
+    if auth_error:
+        return auth_error
+
     mongo_id = ObjectId(category_id)
     try:
         category_doc = categories.find_one({"_id": mongo_id})
@@ -86,6 +114,9 @@ def get_category(category_id: str):
         return jsonify({"error": "Database error occurred"}), 500
 
     if not category_doc:
+        return jsonify({"error": "Category not found"}), 404
+
+    if business_id is not None and category_doc.get("business_id") != business_id:
         return jsonify({"error": "Category not found"}), 404
 
     return jsonify({"category": _serialize_category(category_doc)}), 200
