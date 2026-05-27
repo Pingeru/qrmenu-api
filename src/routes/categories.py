@@ -5,11 +5,40 @@ from flask import Blueprint, jsonify, request
 from pymongo.errors import PyMongoError
 
 from src.middleware.auth_middleware import authenticate_request
+from src.routes.products import delete_product_entry
 from src.utils.database_helper import db
 
 categories_bp = Blueprint("categories", __name__)
 
 categories = db["categories"]
+products = db["products"]
+
+
+def delete_category_entry(category_id: str | ObjectId, business_id: ObjectId | None = None) -> bool:
+    if isinstance(category_id, ObjectId):
+        mongo_id = category_id
+    elif ObjectId.is_valid(category_id):
+        mongo_id = ObjectId(category_id)
+    else:
+        return False
+
+    query = {"_id": mongo_id}
+    if business_id is not None:
+        query["business_id"] = business_id
+
+    category_doc = categories.find_one(query)
+    if not category_doc:
+        return False
+
+    product_query = {"category_id": mongo_id}
+    if business_id is not None:
+        product_query["business_id"] = business_id
+
+    for product_doc in products.find(product_query, {"_id": 1}):
+        delete_product_entry(product_doc["_id"], business_id)
+
+    delete_result = categories.delete_one(query)
+    return delete_result.deleted_count > 0
 
 
 def _require_business():
@@ -167,14 +196,12 @@ def delete_category(category_id: str):
     if not ObjectId.is_valid(category_id):
         return jsonify({"error": "Invalid category id"}), 400
 
-    mongo_id = ObjectId(category_id)
     try:
-        delete_result = categories.delete_one({"_id": mongo_id, "business_id": business_id})
+        deleted = delete_category_entry(category_id, business_id)
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
-    if delete_result.deleted_count == 0:
+    if not deleted:
         return jsonify({"error": "Category not found"}), 404
 
     return jsonify({"message": "Category deleted"}), 200
-

@@ -7,6 +7,8 @@ from flask import Blueprint, jsonify, request, current_app
 from pymongo.errors import PyMongoError
 
 from src.middleware.auth_middleware import authenticate_request
+from src.routes.categories import delete_category_entry
+from src.routes.products import delete_product_entry
 from src.utils.auth_helper import (
     JWT_ALGORITHM,
     build_entity_response,
@@ -22,6 +24,33 @@ business_auth_bp = Blueprint("business_auth", __name__)
 
 BUSINESS_FIELDS = ["name", "email"]
 businesses = db["businesses"]
+categories = db["categories"]
+products = db["products"]
+orders = db["orders"]
+
+
+def delete_business_entry(business_id: str | ObjectId) -> bool:
+    if isinstance(business_id, ObjectId):
+        mongo_id = business_id
+    elif ObjectId.is_valid(business_id):
+        mongo_id = ObjectId(business_id)
+    else:
+        return False
+
+    business_doc = businesses.find_one({"_id": mongo_id})
+    if not business_doc:
+        return False
+
+    for category_doc in categories.find({"business_id": mongo_id}, {"_id": 1}):
+        delete_category_entry(category_doc["_id"], mongo_id)
+
+    for product_doc in products.find({"business_id": mongo_id}, {"_id": 1}):
+        delete_product_entry(product_doc["_id"], mongo_id)
+
+    orders.delete_many({"business_id": mongo_id})
+
+    delete_result = businesses.delete_one({"_id": mongo_id})
+    return delete_result.deleted_count > 0
 
 
 @business_auth_bp.route("/register", methods=["POST"])
@@ -220,11 +249,11 @@ def delete_business():
     mongo_id = ObjectId(business_id) if ObjectId.is_valid(business_id) else business_id
 
     try:
-        delete_result = businesses.delete_one({"_id": mongo_id})
+        deleted = delete_business_entry(mongo_id)
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
-    if delete_result.deleted_count == 0:
+    if not deleted:
         return jsonify({"error": "Business not found"}), 404
 
     return jsonify({"message": "Business deleted"}), 200

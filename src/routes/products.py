@@ -14,6 +14,30 @@ products_bp = Blueprint("products", __name__)
 products = db["products"]
 
 
+def delete_product_entry(product_id: str | ObjectId, business_id: ObjectId | None = None) -> bool:
+    if isinstance(product_id, ObjectId):
+        mongo_id = product_id
+    elif ObjectId.is_valid(product_id):
+        mongo_id = ObjectId(product_id)
+    else:
+        return False
+
+    query = {"_id": mongo_id}
+    if business_id is not None:
+        query["business_id"] = business_id
+
+    product_doc = products.find_one(query)
+    if not product_doc:
+        return False
+
+    delete_result = products.delete_one(query)
+    if delete_result.deleted_count == 0:
+        return False
+
+    _delete_all_product_images(str(mongo_id))
+    return True
+
+
 def _require_business():
     auth_result = authenticate_request()
     if isinstance(auth_result, tuple):
@@ -295,18 +319,13 @@ def delete_product(product_id: str):
     if not ObjectId.is_valid(product_id):
         return jsonify({"error": "Invalid product id"}), 400
 
-    mongo_id = ObjectId(product_id)
     try:
-        product_doc = products.find_one({"_id": mongo_id, "business_id": business_id})
-        if not product_doc:
-            return jsonify({"error": "Product not found"}), 404
-        delete_result = products.delete_one({"_id": mongo_id, "business_id": business_id})
+        deleted = delete_product_entry(product_id, business_id)
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
-    if delete_result.deleted_count == 0:
+    if not deleted:
         return jsonify({"error": "Product not found"}), 404
 
-    _delete_all_product_images(product_id)
     return jsonify({"message": "Product deleted"}), 200
 
