@@ -1,4 +1,4 @@
-import datetime as dt
+﻿import datetime as dt
 import os
 import uuid
 import unittest
@@ -11,8 +11,8 @@ class OrderRouteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         load_dotenv()
-        os.environ["JWT_SECRET"] = "test-access-secret"
-        os.environ["JWT_REFRESH_SECRET"] = "test-refresh-secret"
+        os.environ["JWT_SECRET"] = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        os.environ["JWT_REFRESH_SECRET"] = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
         os.environ["ACCESS_TOKEN_TTL_MIN"] = "5"
         os.environ["REFRESH_TOKEN_TTL_DAYS"] = "5"
         mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
@@ -271,4 +271,5 @@ class OrderRouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 

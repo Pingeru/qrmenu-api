@@ -16,6 +16,7 @@ from src.routes.categories import categories_bp
 from src.routes.products import products_bp
 from src.routes.client_orders import client_orders_bp
 from src.routes.business_orders import business_orders_bp
+from src.cron.scheduler import start_scheduler
 
 app.register_blueprint(business_auth_bp, url_prefix="/api/v1/business/auth")
 app.register_blueprint(client_auth_bp, url_prefix="/api/v1/client/auth")
@@ -25,4 +26,5 @@ app.register_blueprint(client_orders_bp, url_prefix="/api/v1/client/orders")
 app.register_blueprint(business_orders_bp, url_prefix="/api/v1/business/orders")
 
 if __name__ == "__main__":
+    start_scheduler(app)
     app.run(debug=True, host="0.0.0.0", port=API_PORT)

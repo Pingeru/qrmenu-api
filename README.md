@@ -37,3 +37,11 @@ Base path: `/api/v1/business/orders`
 - `PUT /:order_id` (Authorization: Bearer access_token, status)
 - `DELETE /:order_id` (Authorization: Bearer access_token)
 
+# Cron Jobs
+The "src/cron" folder contains background cleanup jobs started by `run.py` while the API is running.
+- Hourly: delete cancelled orders older than 3 hours.
+- Weekly (Sunday 03:00 UTC): cleanup orphaned images and records.
+- Monthly (day 1, 04:00 UTC): delete orders older than 3 months.
+
+These schedules use cron-style triggers provided by APScheduler.
+

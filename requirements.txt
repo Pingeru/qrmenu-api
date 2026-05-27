@@ -8,3 +8,4 @@ cryptography
 marshmallow
 python-dotenv
 PyJWT
+apscheduler

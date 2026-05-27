@@ -1,4 +1,4 @@
-import os
+﻿import os
 import uuid
 import unittest
 from io import BytesIO
@@ -11,8 +11,8 @@ class ProductRouteTests(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
         load_dotenv()
-        os.environ["JWT_SECRET"] = "test-access-secret"
-        os.environ["JWT_REFRESH_SECRET"] = "test-refresh-secret"
+        os.environ["JWT_SECRET"] = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
+        os.environ["JWT_REFRESH_SECRET"] = "cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc"
         os.environ["ACCESS_TOKEN_TTL_MIN"] = "5"
         os.environ["REFRESH_TOKEN_TTL_DAYS"] = "5"
         mongo_uri = os.getenv("MONGO_URI", "mongodb://localhost:27017")
@@ -28,6 +28,7 @@ class ProductRouteTests(unittest.TestCase):
 
         app.testing = True
         cls.client = app.test_client()
+        cls.app = app
         cls.mongo_client = client
         cls.businesses = db["businesses"]
         cls.categories = db["categories"]
@@ -39,7 +40,33 @@ class ProductRouteTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        pass  # MongoDB client is managed by conftest.py
+        cls._cleanup_orphan_images()
+
+    @classmethod
+    def _cleanup_orphan_images(cls):
+        images_dir = os.path.join(cls.app.root_path, "static", "images")
+        if not os.path.exists(images_dir):
+            return
+
+        try:
+            referenced_files = set()
+            for product_doc in cls.products.find({"image_path": {"$ne": None}}, {"image_path": 1}):
+                image_path = product_doc.get("image_path") or ""
+                filename = os.path.basename(image_path.lstrip("/"))
+                if filename:
+                    referenced_files.add(filename)
+
+            for filename in os.listdir(images_dir):
+                file_path = os.path.join(images_dir, filename)
+                if not os.path.isfile(file_path):
+                    continue
+                if filename not in referenced_files:
+                    try:
+                        os.remove(file_path)
+                    except OSError:
+                        pass
+        except Exception:
+            pass
 
     def setUp(self):
         self.created_business_emails = []
@@ -57,6 +84,8 @@ class ProductRouteTests(unittest.TestCase):
             self.products.delete_many({"business_id": {"$in": self.created_business_ids}})
         if self.created_business_emails:
             self.businesses.delete_many({"email": {"$in": self.created_business_emails}})
+
+        self._cleanup_orphan_images()
 
         self.created_product_ids.clear()
         self.created_category_ids.clear()
@@ -768,4 +797,5 @@ class ProductRouteTests(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
 
