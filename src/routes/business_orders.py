@@ -34,7 +34,6 @@ def _serialize_order(order_doc: dict) -> dict:
         "short_order_id": order_doc.get("short_order_id"),
         "business_id": str(order_doc.get("business_id")),
         "user_id": str(order_doc.get("user_id")),
-        "table_number": order_doc.get("table_number"),
         "items": [
             {
                 "product_id": str(item.get("product_id")),

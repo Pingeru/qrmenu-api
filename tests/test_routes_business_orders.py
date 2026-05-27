@@ -138,7 +138,6 @@ class BusinessOrderRouteTests(unittest.TestCase):
             "/api/v1/client/orders",
             json={
                 "business_id": business_id,
-                "table_number": "A1",
                 "items": [{"product_id": product_id, "quantity": 1}],
             },
             headers={"Authorization": f"Bearer {access_token}"},

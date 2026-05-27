@@ -44,7 +44,6 @@ def _serialize_order(order_doc: dict) -> dict:
         "short_order_id": order_doc.get("short_order_id"),
         "business_id": str(order_doc.get("business_id")),
         "user_id": str(order_doc.get("user_id")),
-        "table_number": order_doc.get("table_number"),
         "items": [
             {
                 "product_id": str(item.get("product_id")),
@@ -67,10 +66,9 @@ def create_order():
 
     data = request.get_json(silent=True) or {}
     business_id = data.get("business_id")
-    table_number = (data.get("table_number") or "").strip()
     items = data.get("items")
 
-    if not business_id or not table_number or not items:
+    if not business_id or not items:
         return jsonify({"error": "Missing required fields"}), 400
 
     if not ObjectId.is_valid(business_id):
@@ -130,7 +128,6 @@ def create_order():
         "short_order_id": generate(size=8),
         "business_id": ObjectId(business_id),
         "user_id": user_id,
-        "table_number": table_number,
         "items": order_items,
         "total_amount": float(total_amount),
         "status": "placed",
@@ -179,7 +176,7 @@ def cancel_order(order_id: str):
         return jsonify({"error": "Order not found"}), 404
 
     if order_doc.get("status") != "placed":
-        return jsonify({"error": "Only placed orders can be cancelled"}), 400
+        return jsonify({"error": "Cannot cancel an order that is being prepared"}), 400
 
     try:
         orders.update_one(

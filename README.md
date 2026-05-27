@@ -27,7 +27,7 @@ Base path: `/api/v1/business/categories`
 
 ## Orders Endpoints
 Base path: `/api/v1/client/orders`
-- `POST /` (Authorization: Bearer access_token, business_id, table_number, items)
+- `POST /` (Authorization: Bearer access_token, business_id, items)
 - `GET /` (Authorization: Bearer access_token)
 - `DELETE /:order_id` (Authorization: Bearer access_token)
 

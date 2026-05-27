@@ -138,7 +138,6 @@ class OrderRouteTests(unittest.TestCase):
             "/api/v1/client/orders",
             json={
                 "business_id": business_id,
-                "table_number": "A1",
                 "items": [{"product_id": product_id, "quantity": 2}],
             },
             headers={"Authorization": f"Bearer {access_token}"},
@@ -161,7 +160,6 @@ class OrderRouteTests(unittest.TestCase):
             "/api/v1/client/orders",
             json={
                 "business_id": business_id,
-                "table_number": "A1",
                 "items": [{"product_id": product_id, "quantity": 1}],
             },
             headers={"Authorization": "Bearer invalid_token"},
@@ -186,7 +184,6 @@ class OrderRouteTests(unittest.TestCase):
             "/api/v1/client/orders",
             json={
                 "business_id": business_id_1,
-                "table_number": "A1",
                 "items": [
                     {"product_id": product_id_1, "quantity": 1},
                     {"product_id": product_id_2, "quantity": 1},
