@@ -78,8 +78,17 @@ def _get_payload():
     return request.get_json(silent=True) or {}
 
 
+def _parse_object_id_filter(value: str | None, field_name: str):
+    if value is None:
+        return None, None
+    if not ObjectId.is_valid(value):
+        return None, (jsonify({"error": f"Invalid {field_name}"}), 400)
+    return ObjectId(value), None
+
+
 def _save_image(product_id: str, image_file) -> str:
-    images_dir = os.path.join(current_app.root_path, "static", "images")
+    root_path = str(current_app.root_path)
+    images_dir = os.path.join(root_path, "static", "images")
     os.makedirs(images_dir, exist_ok=True)
     image_filename = f"{product_id}_{generate(size=10)}.png"
     image_path = os.path.join(images_dir, image_filename)
@@ -90,7 +99,8 @@ def _save_image(product_id: str, image_file) -> str:
 def _delete_image(image_path: str | None) -> None:
     if not image_path:
         return
-    local_path = os.path.join(current_app.root_path, image_path.lstrip("/"))
+    root_path = str(current_app.root_path)
+    local_path = os.path.join(root_path, image_path.lstrip("/"))
     try:
         if os.path.exists(local_path):
             os.remove(local_path)
@@ -100,7 +110,8 @@ def _delete_image(image_path: str | None) -> None:
 
 def _delete_all_product_images(product_id: str) -> None:
     """Delete all images associated with a product (handles multiple versions)."""
-    images_dir = os.path.join(current_app.root_path, "static", "images")
+    root_path = str(current_app.root_path)
+    images_dir = os.path.join(root_path, "static", "images")
     if not os.path.exists(images_dir):
         return
 
@@ -205,35 +216,42 @@ def create_product():
 
 
 
-@products_bp.route("/category/<category_id>", methods=["GET"])
-def list_products_by_category(category_id: str):
-    if not ObjectId.is_valid(category_id):
-        return jsonify({"error": "Invalid category id"}), 400
+@products_bp.route("", methods=["GET"])
+def list_products():
+    category_id_raw = request.args.get("category_id")
+    business_id_raw = request.args.get("business_id")
+    is_active_raw = request.args.get("is_active")
 
-    mongo_id = ObjectId(category_id)
+    category_id, error_response = _parse_object_id_filter(category_id_raw, "category id")
+    if error_response:
+        return error_response
+
+    business_id, error_response = _parse_object_id_filter(business_id_raw, "business id")
+    if error_response:
+        return error_response
+
+    is_active = None
+    if is_active_raw is not None:
+        is_active = _parse_bool(is_active_raw)
+        if is_active is None and is_active_raw.strip() != "":
+            return jsonify({"error": "Invalid is_active value"}), 400
+
+    query = {}
+    if category_id is not None:
+        query["category_id"] = category_id
+    if business_id is not None:
+        query["business_id"] = business_id
+    if is_active is not None:
+        query["is_active"] = is_active
+
     try:
-        product_docs = list(products.find({"category_id": mongo_id}).sort("created_at", 1))
+        product_docs = list(products.find(query).sort("created_at", 1))
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
     return jsonify({"products": [_serialize_product(product) for product in product_docs]}), 200
 
 
-@products_bp.route("/<product_id>", methods=["GET"])
-def get_product(product_id: str):
-    if not ObjectId.is_valid(product_id):
-        return jsonify({"error": "Invalid product id"}), 400
-
-    mongo_id = ObjectId(product_id)
-    try:
-        product_doc = products.find_one({"_id": mongo_id})
-    except PyMongoError:
-        return jsonify({"error": "Database error occurred"}), 500
-
-    if not product_doc:
-        return jsonify({"error": "Product not found"}), 404
-
-    return jsonify({"product": _serialize_product(product_doc)}), 200
 
 
 @products_bp.route("/<product_id>", methods=["PUT"])

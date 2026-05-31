@@ -313,38 +313,7 @@ class ProductRouteTests(unittest.TestCase):
         self.assertFalse(product["is_active"])
         self.created_product_ids.append(ObjectId(product["_id"]))
 
-    def test_get_product_by_id_returns_product(self):
-        email = self._unique_email("biz")
-        access_token, _ = self._register_business(email)
-        category_id = self._create_category(access_token)
-
-        create_response = self.client.post(
-            "/api/v1/business/products",
-            json={
-                "name": "Test Product",
-                "category_id": category_id,
-                "price": "10.99",
-            },
-            headers={"Authorization": f"Bearer {access_token}"},
-        )
-        product_id = create_response.get_json()["product"]["_id"]
-        self.created_product_ids.append(ObjectId(product_id))
-
-        response = self.client.get(f"/api/v1/business/products/{product_id}")
-        self.assertEqual(response.status_code, 200)
-        product = response.get_json()["product"]
-        self.assertEqual(product["_id"], product_id)
-        self.assertEqual(product["name"], "Test Product")
-
-    def test_get_product_with_invalid_id_returns_bad_request(self):
-        response = self.client.get("/api/v1/business/products/invalid_id")
-        self.assertEqual(response.status_code, 400)
-
-    def test_get_product_that_does_not_exist_returns_not_found(self):
-        response = self.client.get(f"/api/v1/business/products/{ObjectId()}")
-        self.assertEqual(response.status_code, 404)
-
-    def test_list_products_by_category_returns_products(self):
+    def test_list_products_by_filters_returns_products(self):
         email = self._unique_email("biz")
         access_token, _ = self._register_business(email)
         category_id = self._create_category(access_token)
@@ -364,29 +333,38 @@ class ProductRouteTests(unittest.TestCase):
                 "name": "Product 2",
                 "category_id": category_id,
                 "price": "20.99",
+                "is_active": False,
             },
             headers={"Authorization": f"Bearer {access_token}"},
         )
 
-        response = self.client.get(f"/api/v1/business/products/category/{category_id}")
+        response = self.client.get(
+            "/api/v1/business/products",
+            query_string={"category_id": category_id, "business_id": str(self.created_business_ids[-1]), "is_active": True},
+        )
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
-        self.assertEqual(len(data["products"]), 2)
+        self.assertEqual(len(data["products"]), 1)
+        self.assertEqual(data["products"][0]["name"], "Product 1")
         self.created_product_ids.extend([ObjectId(p["_id"]) for p in data["products"]])
 
-    def test_list_products_by_category_with_invalid_id_returns_bad_request(self):
-        response = self.client.get("/api/v1/business/products/category/invalid_id")
+    def test_list_products_with_invalid_category_id_returns_bad_request(self):
+        response = self.client.get("/api/v1/business/products", query_string={"category_id": "invalid_id"})
         self.assertEqual(response.status_code, 400)
 
-    def test_list_products_by_empty_category_returns_empty_list(self):
+    def test_list_products_with_empty_filter_returns_empty_list(self):
         email = self._unique_email("biz")
         access_token, _ = self._register_business(email)
         category_id = self._create_category(access_token)
 
-        response = self.client.get(f"/api/v1/business/products/category/{category_id}")
+        response = self.client.get("/api/v1/business/products", query_string={"category_id": category_id, "is_active": True})
         self.assertEqual(response.status_code, 200)
         data = response.get_json()
         self.assertEqual(len(data["products"]), 0)
+
+    def test_list_products_with_invalid_is_active_returns_bad_request(self):
+        response = self.client.get("/api/v1/business/products", query_string={"is_active": "maybe"})
+        self.assertEqual(response.status_code, 400)
 
     def test_update_product_without_auth_returns_unauthorized(self):
         email = self._unique_email("biz")

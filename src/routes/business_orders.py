@@ -10,6 +10,8 @@ from src.utils.database_helper import db
 business_orders_bp = Blueprint("business_orders", __name__)
 
 orders = db["orders"]
+products = db["products"]
+users = db["users"]
 
 ALLOWED_STATUSES = {"placed", "preparing", "ready", "cancelled"}
 
@@ -27,8 +29,61 @@ def _require_business():
     return None, mongo_id
 
 
-def _serialize_order(order_doc: dict) -> dict:
+def _normalize_id(value):
+    if isinstance(value, ObjectId):
+        return value
+    if ObjectId.is_valid(value):
+        return ObjectId(value)
+    return value
+
+
+def _build_image_url(image_path: str | None) -> str | None:
+    if not image_path:
+        return None
+    return f"{request.host_url.rstrip('/')}/{image_path.lstrip('/')}"
+
+
+def _serialize_customer(user_doc: dict | None) -> dict | None:
+    if not user_doc:
+        return None
+
+    first_name = (user_doc.get("first_name") or "").strip()
+    last_name = (user_doc.get("last_name") or "").strip()
+    full_name = f"{first_name} {last_name}".strip()
+
+    return {
+        "id": str(user_doc.get("_id")),
+        "name": full_name,
+        "phone": user_doc.get("phone_number"),
+    }
+
+def _parse_iso_datetime(value: str) -> dt.datetime | None:
+    if value is None:
+        return None
+    v = value.strip()
+    if v.endswith("Z"):
+        v = v[:-1] + "+00:00"
+    try:
+        parsed = dt.datetime.fromisoformat(v)
+    except Exception:
+        try:
+            ts = float(value)
+        except Exception:
+            return None
+        try:
+            return dt.datetime.fromtimestamp(ts, dt.UTC)
+        except Exception:
+            return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=dt.UTC)
+    return parsed
+
+
+def _serialize_order(order_doc: dict, product_map: dict | None = None, user_map: dict | None = None) -> dict:
     created_at = order_doc.get("created_at")
+    product_map = product_map or {}
+    user_map = user_map or {}
+
     return {
         "_id": str(order_doc["_id"]),
         "short_order_id": order_doc.get("short_order_id"),
@@ -37,11 +92,14 @@ def _serialize_order(order_doc: dict) -> dict:
         "items": [
             {
                 "product_id": str(item.get("product_id")),
+                "product_name": (product_map.get(_normalize_id(item.get("product_id"))) or {}).get("name"),
+                "product_image": _build_image_url((product_map.get(_normalize_id(item.get("product_id"))) or {}).get("image_path")),
                 "quantity": item.get("quantity"),
                 "price_at_purchase": item.get("price_at_purchase"),
             }
             for item in order_doc.get("items", [])
         ],
+        "customer": _serialize_customer(user_map.get(_normalize_id(order_doc.get("user_id")))),
         "total_amount": order_doc.get("total_amount"),
         "status": order_doc.get("status"),
         "created_at": created_at.isoformat() if hasattr(created_at, "isoformat") else created_at,
@@ -54,17 +112,60 @@ def list_business_orders():
     if auth_error:
         return auth_error
 
-    cutoff = dt.datetime.now(dt.UTC) - dt.timedelta(hours=12)
+    # Default time window: last 12 hours
+    now = dt.datetime.now(dt.UTC)
+    default_cutoff = now - dt.timedelta(hours=12)
+
+    from_raw = request.args.get("from")
+    to_raw = request.args.get("to")
+
+    from_dt = _parse_iso_datetime(from_raw) if from_raw is not None else None
+    to_dt = _parse_iso_datetime(to_raw) if to_raw is not None else None
+
+    if from_dt is None and to_dt is None:
+        from_dt = default_cutoff
+        to_dt = now
+    elif from_dt is not None and to_dt is None:
+        to_dt = now
+    elif from_dt is None and to_dt is not None:
+        from_dt = to_dt - dt.timedelta(hours=12)
+
+    if from_dt is None or to_dt is None:
+        return jsonify({"error": "Invalid date format for 'from' or 'to'"}), 400
+
+    if from_dt > to_dt:
+        return jsonify({"error": "'from' must be before or equal to 'to'"}), 400
+
     try:
         order_docs = list(
             orders.find(
-                {"business_id": business_id, "created_at": {"$gte": cutoff}}
+                {"business_id": business_id, "created_at": {"$gte": from_dt, "$lte": to_dt}}
             ).sort("created_at", -1)
         )
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
-    return jsonify({"orders": [_serialize_order(order) for order in order_docs]}), 200
+    product_ids = set()
+    user_ids = set()
+    for order_doc in order_docs:
+        user_id = order_doc.get("user_id")
+        if user_id is not None:
+            user_ids.add(_normalize_id(user_id))
+        for item in order_doc.get("items", []):
+            product_id = item.get("product_id")
+            if product_id is not None:
+                product_ids.add(_normalize_id(product_id))
+
+    try:
+        product_docs = list(products.find({"_id": {"$in": list(product_ids)}})) if product_ids else []
+        user_docs = list(users.find({"_id": {"$in": list(user_ids)}})) if user_ids else []
+    except PyMongoError:
+        return jsonify({"error": "Database error occurred"}), 500
+
+    product_map = {doc["_id"]: doc for doc in product_docs}
+    user_map = {doc["_id"]: doc for doc in user_docs}
+
+    return jsonify({"orders": [_serialize_order(order, product_map, user_map) for order in order_docs]}), 200
 
 
 @business_orders_bp.route("/<order_id>", methods=["PUT"])
