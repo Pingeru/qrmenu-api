@@ -1,47 +1,73 @@
 # qrmenu-api
-QR Menu Builder Backend API
 
-## Business Auth Endpoints
-Base path: `/api/v1/business/auth`
--- `POST /register` (name, email, password)
-- `POST /login` (email, password)
-- `POST /refresh` (refresh_token)
-- `PUT /edit` (access_token + fields to update)
-- `DELETE /delete` (access_token)
+QR Menu Builder backend API built with Flask + MongoDB.
 
-## Client Auth Endpoints
-Base path: `/api/v1/client/auth`
-- `POST /register` (first_name, last_name, phone_number, email, password)
-- `POST /login` (email, password)
-- `POST /refresh` (refresh_token)
-- `PUT /edit` (access_token + fields to update)
-- `DELETE /delete` (access_token)
+## Full API Reference
 
-## Category Endpoints
-Base path: `/api/v1/business/categories`
-- `POST /` (Authorization: Bearer access_token, name)
-- `GET /` (Authorization: Bearer access_token)
-- `GET /:category_id` (Authorization: Bearer access_token)
-- `PUT /:category_id` (Authorization: Bearer access_token, name)
-- `DELETE /:category_id` (Authorization: Bearer access_token)
+For complete endpoint documentation (purpose, request/response schema, auth rules, query parameters, and examples), see:
 
-## Orders Endpoints
-Base path: `/api/v1/client/orders`
-- `POST /` (Authorization: Bearer access_token, business_id, items)
-- `GET /` (Authorization: Bearer access_token)
-- `DELETE /:order_id` (Authorization: Bearer access_token)
+- `API_DOCUMENTATION.md`
 
-## Business Orders Endpoints
-Base path: `/api/v1/business/orders`
-- `GET /` (Authorization: Bearer access_token)
-- `PUT /:order_id` (Authorization: Bearer access_token, status)
-- `DELETE /:order_id` (Authorization: Bearer access_token)
+## Quick Start
 
-# Cron Jobs
-The "src/cron" folder contains background cleanup jobs started by `run.py` while the API is running.
-- Hourly: delete cancelled orders older than 3 hours.
-- Weekly (Sunday 03:00 UTC): cleanup orphaned images and records.
-- Monthly (day 1, 04:00 UTC): delete orders older than 3 months.
+Install and run:
 
-These schedules use cron-style triggers provided by APScheduler.
+```bash
+pip install -r requirements.txt
+python run.py
+```
+
+Default API base URL:
+
+- `http://localhost:3005/api/v1`
+
+## Current Endpoint Groups
+
+- Business auth: `/api/v1/business/auth`
+- Client auth: `/api/v1/client/auth`
+- Categories: `/api/v1/business/categories`
+- Products: `/api/v1/business/products`
+- Client orders: `/api/v1/client/orders`
+- Business orders: `/api/v1/business/orders`
+- Business analytics: `/api/v1/business/analytics`
+
+## Latest Changes
+
+- Added business analytics endpoint (`GET /api/v1/business/analytics`)
+  - Returns totals and ranking metrics: total orders, revenue, AOV, total items, top/least sold products, top/least sold categories
+  - Supports `from` and `to` time filters (default: current month)
+- Product listing endpoint is now query-filter based:
+  - `GET /api/v1/business/products?category_id=<id>&business_id=<id>&is_active=true`
+- Business order listing supports timeline filters:
+  - `GET /api/v1/business/orders?from=<iso_or_epoch>&to=<iso_or_epoch>`
+  - Default remains last 12 hours
+- Business order responses are enriched with:
+  - item-level product name/image
+  - customer summary (`id`, `name`, `phone`)
+- Cascade-safe deletes for business/category/product routes were added to avoid orphaned database/file records.
+
+## Background Cleanup Jobs
+
+`run.py` starts APScheduler jobs while the API process is running:
+
+- Hourly (`minute=0`): delete cancelled orders older than 3 hours
+- Weekly (`Sunday 03:00 UTC`): remove orphaned images and inconsistent orders/products/categories
+- Monthly (`day=1 04:00 UTC`): delete orders older than ~3 months
+
+Implementation:
+
+- `src/cron/scheduler.py`
+- `src/cron/cleanup_jobs.py`
+
+## Required Environment Variables
+
+- `MONGO_URI`
+- `JWT_SECRET`
+- `JWT_REFRESH_SECRET`
+
+Optional:
+
+- `API_PORT` (default `3005`)
+- `ACCESS_TOKEN_TTL_MIN`
+- `REFRESH_TOKEN_TTL_DAYS`
 
