@@ -625,7 +625,6 @@ Background jobs are started by `run.py` through APScheduler while the API proces
   - remove orders whose `business_id` or `user_id` points to missing records
   - remove products with invalid/mismatched business/category links
   - remove categories pointing to missing businesses
-- Monthly (`day=1, 04:00 UTC`): delete orders older than ~3 months (`90 days`)
 
 Implementation files:
 

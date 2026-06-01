@@ -19,11 +19,6 @@ def delete_cancelled_orders_older_than(hours: int = 3) -> int:
     return result.deleted_count
 
 
-def delete_orders_older_than_months(months: int = 3) -> int:
-    cutoff = dt.datetime.now(dt.UTC) - dt.timedelta(days=months * 30)
-    result = orders.delete_many({"created_at": {"$lt": cutoff}})
-    return result.deleted_count
-
 
 def cleanup_orphaned_data(app_root_path: str) -> dict[str, Any]:
     deleted_images = _cleanup_orphaned_images(app_root_path)

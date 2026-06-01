@@ -52,7 +52,6 @@ Default API base URL:
 
 - Hourly (`minute=0`): delete cancelled orders older than 3 hours
 - Weekly (`Sunday 03:00 UTC`): remove orphaned images and inconsistent orders/products/categories
-- Monthly (`day=1 04:00 UTC`): delete orders older than ~3 months
 
 Implementation:
 

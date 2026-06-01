@@ -6,7 +6,6 @@ from apscheduler.triggers.cron import CronTrigger
 from src.cron.cleanup_jobs import (
     cleanup_orphaned_data,
     delete_cancelled_orders_older_than,
-    delete_orders_older_than_months,
 )
 
 
@@ -37,13 +36,6 @@ def start_scheduler(app) -> BackgroundScheduler | None:
         lambda: _run_with_context(cleanup_orphaned_data, app.root_path),
         CronTrigger(day_of_week="sun", hour=3, minute=0),
         id="cleanup_orphaned_weekly",
-        replace_existing=True,
-    )
-
-    scheduler.add_job(
-        lambda: _run_with_context(delete_orders_older_than_months, 3),
-        CronTrigger(day=1, hour=4, minute=0),
-        id="cleanup_old_orders_monthly",
         replace_existing=True,
     )
 
