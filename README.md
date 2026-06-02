@@ -30,9 +30,19 @@ Default API base URL:
 - Client orders: `/api/v1/client/orders`
 - Business orders: `/api/v1/business/orders`
 - Business analytics: `/api/v1/business/analytics`
+- Business QR code: `/api/v1/business/qr`
+- Public menu page: `/menu/<business_id>`
 
 ## Latest Changes
 
+- Added business QR code endpoint:
+  - `GET /api/v1/business/qr/`
+  - Requires a signed-in business and returns a downloadable in-memory PNG QR code
+  - QR code content points to `https://qrmenu.dovanay.com/menu/<business_id>`
+- Added a public menu landing page:
+  - `GET /menu/<business_id>`
+  - Serves a static web page that prompts users to download the mobile app
+  - Links to `https://github.com/Pingeru/qrmenu-mobile`
 - Added business analytics endpoint (`GET /api/v1/business/analytics`)
   - Returns totals and ranking metrics: total orders, revenue, AOV, total items, top/least sold products, top/least sold categories
   - Supports `from` and `to` time filters (default: current month)

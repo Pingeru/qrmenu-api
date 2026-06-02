@@ -17,6 +17,8 @@ This document describes the full HTTP API exposed by `qrmenu-api`, including end
 - [Client Orders](#client-orders)
 - [Business Orders](#business-orders)
 - [Business Analytics](#business-analytics)
+- [Business QR](#business-qr)
+- [Public Menu Page](#public-menu-page)
 - [Background Cleanup Jobs](#background-cleanup-jobs)
 - [Environment Variables](#environment-variables)
 
@@ -612,6 +614,51 @@ Example response shape:
   }
 }
 ```
+
+---
+
+## Business QR
+
+Base path: `/api/v1/business/qr`
+
+### `GET /`
+
+Generate a QR code for the logged-in business.
+
+Auth: business access token required.
+
+Behavior:
+
+- Builds the URL `https://qrmenu.dovanay.com/menu/<business_id>`
+- Generates a PNG QR code in memory using `qrcode` + Pillow
+- Returns the PNG as a downloadable file
+
+Success `200`:
+
+- Response content type: `image/png`
+- Response body: QR code PNG bytes
+
+---
+
+## Public Menu Page
+
+Base path: `/menu/<business_id>`
+
+### `GET /menu/<business_id>`
+
+Serve the public landing page that is encoded in the business QR code.
+
+Auth: none.
+
+Behavior:
+
+- Returns a static HTML page from the `static` folder
+- Displays the message `Download our mobile app`
+- Links to `https://github.com/Pingeru/qrmenu-mobile`
+
+Success `200`:
+
+- Response content type: `text/html`
 
 ---
 
