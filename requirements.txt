@@ -9,3 +9,5 @@ marshmallow
 python-dotenv
 PyJWT
 apscheduler
+qrcode
+pillow

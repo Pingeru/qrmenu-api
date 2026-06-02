@@ -82,4 +82,4 @@ dmypy.json
 *.sublime-project
 *.sublime-workspace
 
-static/
+static/images
