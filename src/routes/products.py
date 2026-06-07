@@ -132,7 +132,9 @@ def _build_image_url(image_path: str | None) -> str | None:
     if not image_path:
         return None
     relative_path = image_path.lstrip("/")
-    return f"{request.host_url.rstrip('/')}/{relative_path}"
+    proto = request.headers.get("X-Forwarded-Proto", request.scheme)
+    host = request.headers.get("X-Forwarded-Host", request.host)
+    return f"{proto}://{host}/{relative_path}"
 
 
 def _serialize_product(product_doc: dict) -> dict:

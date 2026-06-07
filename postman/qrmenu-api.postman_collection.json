@@ -1,0 +1,779 @@
+{
+  "info": {
+    "name": "qrmenu-api",
+    "description": "Postman collection for qrmenu-api. Uses {{baseUrl}} and stores auth tokens / created resource IDs in the selected environment.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "baseUrl",
+      "value": "http://localhost:3005",
+      "type": "string"
+    },
+    {
+      "key": "apiVersion",
+      "value": "api/v1",
+      "type": "string"
+    }
+  ],
+  "item": [
+    {
+      "name": "Business Auth",
+      "item": [
+        {
+          "name": "Register Business",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Coffee House\",\n  \"email\": \"owner@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/auth/register",
+            "description": "Create a business account and store the returned tokens in the environment."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.access_token) pm.environment.set('accessToken', body.access_token);",
+                  "if (body.refresh_token) pm.environment.set('refreshToken', body.refresh_token);",
+                  "if (body.business && body.business._id) pm.environment.set('businessId', body.business._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Business",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.access_token) pm.environment.set('accessToken', body.access_token);",
+                  "if (body.refresh_token) pm.environment.set('refreshToken', body.refresh_token);",
+                  "if (body.business && body.business._id) pm.environment.set('businessId', body.business._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Business Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/auth/refresh"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.access_token) pm.environment.set('accessToken', body.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit Business",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Coffee House Updated\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/auth/edit"
+          }
+        },
+        {
+          "name": "Delete Business",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/auth/delete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client Auth",
+      "item": [
+        {
+          "name": "Register Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Ali\",\n  \"last_name\": \"Veli\",\n  \"phone_number\": \"5551234567\",\n  \"email\": \"ali@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/auth/register"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 201', function () {",
+                  "  pm.expect(pm.response.code).to.eql(201);",
+                  "});",
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.access_token) pm.environment.set('accessToken', body.access_token);",
+                  "if (body.refresh_token) pm.environment.set('refreshToken', body.refresh_token);",
+                  "if (body.user && body.user._id) pm.environment.set('clientId', body.user._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Login Client",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ali@example.com\",\n  \"password\": \"Password123!\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/auth/login"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.access_token) pm.environment.set('accessToken', body.access_token);",
+                  "if (body.refresh_token) pm.environment.set('refreshToken', body.refresh_token);",
+                  "if (body.user && body.user._id) pm.environment.set('clientId', body.user._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Refresh Client Token",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"refresh_token\": \"{{refreshToken}}\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/auth/refresh"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "pm.test('Status code is 200', function () {",
+                  "  pm.expect(pm.response.code).to.eql(200);",
+                  "});",
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.access_token) pm.environment.set('accessToken', body.access_token);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "Edit Client",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"first_name\": \"Ali\",\n  \"last_name\": \"Veli\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/auth/edit"
+          }
+        },
+        {
+          "name": "Delete Client",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/auth/delete"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Categories",
+      "item": [
+        {
+          "name": "Create Category",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Hot Drinks\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/categories"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.category && body.category._id) pm.environment.set('categoryId', body.category._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Categories",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/{{apiVersion}}/business/categories"
+          }
+        },
+        {
+          "name": "Get Category",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/{{apiVersion}}/business/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Update Category",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Updated Hot Drinks\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/categories/{{categoryId}}"
+          }
+        },
+        {
+          "name": "Delete Category",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/categories/{{categoryId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Products",
+      "item": [
+        {
+          "name": "Create Product",
+          "request": {
+            "method": "POST",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Latte",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Double shot espresso drink",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{categoryId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "120",
+                  "type": "text"
+                },
+                {
+                  "key": "is_active",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/products"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.product && body.product._id) pm.environment.set('productId', body.product._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List Products",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/{{apiVersion}}/business/products",
+            "description": "Optional query examples:\n- {{baseUrl}}/{{apiVersion}}/business/products?category_id={{categoryId}}\n- {{baseUrl}}/{{apiVersion}}/business/products?business_id={{businessId}}&is_active=true"
+          }
+        },
+        {
+          "name": "Update Product",
+          "request": {
+            "method": "PUT",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "Latte Large",
+                  "type": "text"
+                },
+                {
+                  "key": "description",
+                  "value": "Updated description",
+                  "type": "text"
+                },
+                {
+                  "key": "category_id",
+                  "value": "{{categoryId}}",
+                  "type": "text"
+                },
+                {
+                  "key": "price",
+                  "value": "140",
+                  "type": "text"
+                },
+                {
+                  "key": "is_active",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "image",
+                  "type": "file",
+                  "src": ""
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/products/{{productId}}"
+          }
+        },
+        {
+          "name": "Delete Product",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/products/{{productId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Client Orders",
+      "item": [
+        {
+          "name": "Create Order",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"business_id\": \"{{businessId}}\",\n  \"items\": [\n    {\n      \"product_id\": \"{{productId}}\",\n      \"quantity\": 2\n    }\n  ]\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/orders"
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "let body = {};",
+                  "try { body = pm.response.json(); } catch (e) {}",
+                  "if (body.order && body.order._id) pm.environment.set('orderId', body.order._id);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "List My Orders",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/orders"
+          }
+        },
+        {
+          "name": "Cancel My Order",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/orders/{{orderId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business Orders",
+      "item": [
+        {
+          "name": "List Business Orders",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/orders",
+            "description": "Optional query examples:\n- {{baseUrl}}/{{apiVersion}}/business/orders?from={{fromIso}}\n- {{baseUrl}}/{{apiVersion}}/business/orders?from={{fromIso}}&to={{toIso}}"
+          }
+        },
+        {
+          "name": "Update Order Status",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"preparing\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/orders/{{orderId}}"
+          }
+        },
+        {
+          "name": "Delete Order",
+          "request": {
+            "method": "DELETE",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/orders/{{orderId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business Analytics",
+      "item": [
+        {
+          "name": "Get Analytics Summary",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/analytics",
+            "description": "Optional query examples:\n- {{baseUrl}}/{{apiVersion}}/business/analytics?from={{fromIso}}\n- {{baseUrl}}/{{apiVersion}}/business/analytics?from={{fromIso}}&to={{toIso}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Business QR",
+      "item": [
+        {
+          "name": "Get Business QR Code",
+          "request": {
+            "method": "GET",
+            "auth": {
+              "type": "bearer",
+              "bearer": [
+                {
+                  "key": "token",
+                  "value": "{{accessToken}}",
+                  "type": "string"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/qr/"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Public Menu Page",
+      "item": [
+        {
+          "name": "View Menu Page",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/menu/{{businessId}}"
+          }
+        }
+      ]
+    }
+  ]
+}

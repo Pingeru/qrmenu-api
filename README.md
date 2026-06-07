@@ -33,6 +33,23 @@ Default API base URL:
 - Business QR code: `/api/v1/business/qr`
 - Public menu page: `/menu/<business_id>`
 
+## Postman Config
+
+Import these files into Postman:
+
+- Collection: `postman/qrmenu-api.postman_collection.json`
+- Environment: `postman/qrmenu-api.postman_environment.json`
+
+The collection uses `{{baseUrl}}` and `{{apiVersion}}` and is set up to store tokens and created resource IDs in the selected environment.
+
+Suggested workflow:
+
+1. Import the collection and environment.
+2. Select the `qrmenu-api local` environment.
+3. Run a business or client register/login request to populate `accessToken` and `refreshToken`.
+4. Create a category and product to populate `categoryId` and `productId`.
+5. Use the saved IDs for order, analytics, QR code, and public menu requests.
+
 ## Latest Changes
 
 - Added business QR code endpoint:
