@@ -32,6 +32,7 @@ Default API base URL:
 - Business analytics: `/api/v1/business/analytics`
 - Business QR code: `/api/v1/business/qr`
 - Public menu page: `/menu/<business_id>`
+- Password reset page: `/password-reset`
 
 ## Postman Config
 
@@ -72,6 +73,14 @@ Suggested workflow:
   - item-level product name/image
   - customer summary (`id`, `name`, `phone`)
 - Cascade-safe deletes for business/category/product routes were added to avoid orphaned database/file records.
+- Added forgot-password flows for businesses and clients:
+  - `POST /api/v1/business/auth/forgot-password`
+  - `POST /api/v1/client/auth/forgot-password`
+  - Both send a reset email with a link to `https://<host>/password-reset?token=<jwt>`
+- Added a hosted password reset page:
+  - `GET /password-reset?token=<jwt>`
+  - `POST /password-reset`
+  - The page renders from `templates/password_reset.html` and updates the account password after token validation.
 
 ## Background Cleanup Jobs
 
@@ -90,10 +99,20 @@ Implementation:
 - `MONGO_URI`
 - `JWT_SECRET`
 - `JWT_REFRESH_SECRET`
+- `PASSWORD_RESET_TOKEN_TTL_MIN` (default `30`)
 
 Optional:
 
 - `API_PORT` (default `3005`)
 - `ACCESS_TOKEN_TTL_MIN`
 - `REFRESH_TOKEN_TTL_DAYS`
+- `SMTP_HOST`
+- `SMTP_PORT` (default `587`)
+- `SMTP_USERNAME`
+- `SMTP_PASSWORD`
+- `SMTP_FROM_EMAIL`
+- `SMTP_USE_TLS` (default `true`)
+- `SMTP_USE_SSL` (default `false`)
+- `SMTP_TIMEOUT` (default `10`)
+- `APP_NAME` (used in email templates)
 

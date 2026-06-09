@@ -25,6 +25,21 @@ class AuthHelperTests(unittest.TestCase):
         payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=[auth_helper.JWT_ALGORITHM])
         self.assertEqual(payload["sub"], "abc123")
         self.assertEqual(payload["user_type"], "client")
+        self.assertEqual(payload["purpose"], "auth")
+
+    def test_create_access_token_with_custom_claims(self):
+        token = auth_helper.create_access_token(
+            "reset123",
+            "password_reset_client",
+            ttl_minutes=2,
+            purpose="password_reset",
+            extra_payload={"account_type": "client"},
+        )
+        payload = jwt.decode(token, os.environ["JWT_SECRET"], algorithms=[auth_helper.JWT_ALGORITHM])
+        self.assertEqual(payload["sub"], "reset123")
+        self.assertEqual(payload["user_type"], "password_reset_client")
+        self.assertEqual(payload["purpose"], "password_reset")
+        self.assertEqual(payload["account_type"], "client")
 
     def test_create_refresh_token(self):
         token = auth_helper.create_refresh_token("biz456", "business")

@@ -4,6 +4,7 @@ import datetime as dt
 import hashlib
 import hmac
 import os
+from typing import Any
 
 import jwt
 
@@ -34,17 +35,28 @@ def verify_password(password: str, password_hash: str) -> bool:
     return hmac.compare_digest(actual, expected)
 
 
-def create_access_token(subject_id: str, user_type: str) -> str:
+def create_access_token(
+    subject_id: str,
+    user_type: str,
+    *,
+    ttl_minutes: int | None = None,
+    purpose: str = "auth",
+    extra_payload: dict | None = None,
+) -> str:
     secret = os.getenv("JWT_SECRET")
     if not secret:
         raise RuntimeError("Missing JWT_SECRET")
 
-    ttl_minutes = int(os.getenv("ACCESS_TOKEN_TTL_MIN", "15"))
+    if ttl_minutes is None:
+        ttl_minutes = int(os.getenv("ACCESS_TOKEN_TTL_MIN", "15"))
     payload = {
         "sub": subject_id,
         "user_type": user_type,
+        "purpose": purpose,
         "exp": dt.datetime.now(dt.UTC) + dt.timedelta(minutes=ttl_minutes),
     }
+    if extra_payload:
+        payload.update(extra_payload)
     token = jwt.encode(payload, secret, algorithm=JWT_ALGORITHM)
     return token.decode("utf-8") if isinstance(token, bytes) else token
 
@@ -64,13 +76,16 @@ def create_refresh_token(subject_id: str, user_type: str) -> str:
     return token.decode("utf-8") if isinstance(token, bytes) else token
 
 
-def build_entity_response(entity_doc: dict, fields: list[str]) -> dict:
-    created_at = entity_doc.get("created_at")
-    created_at_value = created_at.isoformat() if hasattr(created_at, "isoformat") else created_at
-    response = {"_id": str(entity_doc["_id"])}
-    for field in fields:
-        response[field] = entity_doc.get(field)
+def build_entity_response(entity_doc: dict[str, Any], fields: list[str]) -> dict[str, Any]:
+    response: dict[str, Any] = {"_id": str(entity_doc["_id"])}
+    response.update({field: entity_doc.get(field) for field in fields})
     if "created_at" in entity_doc:
-        response["created_at"] = created_at_value
+        created_at = entity_doc["created_at"]
+        if isinstance(created_at, dt.datetime):
+            response["created_at"] = created_at.isoformat()
+        elif created_at is None:
+            response["created_at"] = None
+        else:
+            response["created_at"] = str(created_at)
     return response
 

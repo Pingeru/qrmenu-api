@@ -18,6 +18,7 @@ from src.routes.client_orders import client_orders_bp
 from src.routes.business_orders import business_orders_bp
 from src.routes.business_analytics import business_analytics_bp
 from src.routes.business_qr import business_qr_bp
+from src.routes.password_reset import password_reset_bp
 from src.routes.menu_page import menu_page_bp
 from src.cron.scheduler import start_scheduler
 
@@ -29,6 +30,7 @@ app.register_blueprint(client_orders_bp, url_prefix="/api/v1/client/orders")
 app.register_blueprint(business_orders_bp, url_prefix="/api/v1/business/orders")
 app.register_blueprint(business_analytics_bp, url_prefix="/api/v1/business/analytics")
 app.register_blueprint(business_qr_bp, url_prefix="/api/v1/business/qr")
+app.register_blueprint(password_reset_bp)
 app.register_blueprint(menu_page_bp, url_prefix="/menu")
 
 if __name__ == "__main__":

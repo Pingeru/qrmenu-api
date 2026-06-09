@@ -125,6 +125,24 @@
           ]
         },
         {
+          "name": "Forgot Business Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"owner@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/business/auth/forgot-password",
+            "description": "Sends a password reset email if the business account exists."
+          }
+        },
+        {
           "name": "Edit Business",
           "request": {
             "method": "PUT",
@@ -275,6 +293,24 @@
               }
             }
           ]
+        },
+        {
+          "name": "Forgot Client Password",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"ali@example.com\"\n}"
+            },
+            "url": "{{baseUrl}}/{{apiVersion}}/client/auth/forgot-password",
+            "description": "Sends a password reset email if the client account exists."
+          }
         },
         {
           "name": "Edit Client",
@@ -771,6 +807,47 @@
           "request": {
             "method": "GET",
             "url": "{{baseUrl}}/menu/{{businessId}}"
+          }
+        }
+      ]
+    },
+    {
+      "name": "Password Reset",
+      "item": [
+        {
+          "name": "View Password Reset Page",
+          "request": {
+            "method": "GET",
+            "url": "{{baseUrl}}/password-reset?token={{passwordResetToken}}",
+            "description": "Open the hosted password reset page using a token copied from the reset email."
+          }
+        },
+        {
+          "name": "Submit Password Reset",
+          "request": {
+            "method": "POST",
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "token",
+                  "value": "{{passwordResetToken}}",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "Password123!",
+                  "type": "text"
+                },
+                {
+                  "key": "confirm_password",
+                  "value": "Password123!",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": "{{baseUrl}}/password-reset",
+            "description": "Submit the new password to the hosted password reset page."
           }
         }
       ]

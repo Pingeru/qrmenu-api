@@ -18,6 +18,7 @@ from src.utils.auth_helper import (
     normalize_email,
     verify_password,
 )
+from src.utils.password_reset_helper import send_password_reset_email
 from src.utils.database_helper import db
 
 business_auth_bp = Blueprint("business_auth", __name__)
@@ -174,6 +175,31 @@ def refresh_access_token():
         return jsonify({"error": str(exc)}), 500
 
     return jsonify({"access_token": access_token}), 200
+
+
+@business_auth_bp.route("/forgot-password", methods=["POST"])
+def forgot_business_password():
+    data = request.get_json(silent=True) or request.form.to_dict() or {}
+    email = normalize_email(data.get("email") or "")
+
+    if not email:
+        return jsonify({"error": "Missing required fields"}), 400
+
+    try:
+        business_doc = businesses.find_one({"email": email})
+    except PyMongoError:
+        return jsonify({"error": "Database error occurred"}), 500
+
+    if business_doc:
+        try:
+            send_password_reset_email(business_doc, "business")
+        except RuntimeError:
+            return jsonify({"error": "Unable to send password reset email"}), 500
+
+    return (
+        jsonify({"message": "If the account exists, a password reset email has been sent"}),
+        200,
+    )
 
 
 @business_auth_bp.route("/edit", methods=["PUT"])

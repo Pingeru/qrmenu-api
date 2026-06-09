@@ -19,6 +19,7 @@ This document describes the full HTTP API exposed by `qrmenu-api`, including end
 - [Business Analytics](#business-analytics)
 - [Business QR](#business-qr)
 - [Public Menu Page](#public-menu-page)
+- [Password Reset Website](#password-reset-website)
 - [Background Cleanup Jobs](#background-cleanup-jobs)
 - [Environment Variables](#environment-variables)
 
@@ -117,6 +118,34 @@ Success `200`:
 ```json
 {"access_token": "..."}
 ```
+
+### `POST /forgot-password`
+
+Send a password reset email for a business account.
+
+Request JSON:
+
+```json
+{"email": "owner@example.com"}
+```
+
+Behavior:
+
+- If the email exists, the API generates a short-lived JWT reset token using the existing token creation system.
+- The email is rendered from `templates/password_reset_email.html`.
+- The reset button links to `https://<forwarded-host>/password-reset?token=<jwt>`.
+- The response is intentionally generic to avoid account enumeration.
+
+Success `200`:
+
+```json
+{"message": "If the account exists, a password reset email has been sent"}
+```
+
+Possible failures:
+
+- `400` missing email
+- `500` database or SMTP failure
 
 ### `PUT /edit`
 
@@ -221,6 +250,27 @@ Success `200`:
 ```json
 {"access_token": "..."}
 ```
+
+### `POST /forgot-password`
+
+Send a password reset email for a client account.
+
+Request JSON:
+
+```json
+{"email": "ali@example.com"}
+```
+
+Behavior and response are the same as business forgot-password:
+
+- short-lived JWT reset token
+- HTML email template with reset button
+- generic success response
+
+Possible failures:
+
+- `400` missing email
+- `500` database or SMTP failure
 
 ### `PUT /edit`
 
@@ -662,6 +712,53 @@ Success `200`:
 
 ---
 
+## Password Reset Website
+
+Base path: `/password-reset`
+
+### `GET /password-reset?token=<jwt>`
+
+Open the hosted reset page from the email link.
+
+Behavior:
+
+- Validates the token from the `token` query parameter.
+- Loads the matching business or client account.
+- Renders `templates/password_reset.html` with two password fields and a single `reset password` button.
+
+Possible responses:
+
+- `200` valid token and form rendered
+- `400` missing or invalid token
+- `401` expired token
+- `404` account not found
+
+### `POST /password-reset`
+
+Submit a new password from the hosted page.
+
+Form fields:
+
+- `token`
+- `password`
+- `confirm_password`
+
+Behavior:
+
+- Revalidates the token.
+- Confirms both password fields match.
+- Replaces the stored password hash for the matching business or client account.
+
+Possible responses:
+
+- `200` password updated successfully
+- `400` missing/invalid fields or mismatched passwords
+- `401` expired token
+- `404` account not found
+- `500` database failure
+
+---
+
 ## Background Cleanup Jobs
 
 Background jobs are started by `run.py` through APScheduler while the API process is alive.
@@ -690,6 +787,22 @@ Common variables used by API:
 - `JWT_REFRESH_SECRET` (refresh token secret)
 - `ACCESS_TOKEN_TTL_MIN`
 - `REFRESH_TOKEN_TTL_DAYS`
+- `PASSWORD_RESET_TOKEN_TTL_MIN` (password-reset JWT lifetime; default `30` minutes)
+
+SMTP settings used for password reset emails:
+
+- `SMTP_HOST`
+- `SMTP_PORT` (default `587`)
+- `SMTP_USERNAME` (optional)
+- `SMTP_PASSWORD` (optional)
+- `SMTP_FROM_EMAIL` (optional; falls back to `SMTP_USERNAME`)
+- `SMTP_USE_TLS` (default `true`)
+- `SMTP_USE_SSL` (default `false`)
+- `SMTP_TIMEOUT` (default `10` seconds)
+
+Optional:
+
+- `APP_NAME` (used in rendered email templates)
 
 For security and compatibility with modern PyJWT checks, keep JWT secrets at least 32+ characters (recommended much longer).
 
