@@ -5,30 +5,20 @@ from bson import ObjectId
 from pymongo import MongoClient
 
 
-
 class _SafeInsertResult:
     def __init__(self, inserted_id):
         self.inserted_id = inserted_id
 
 
 def safe_insert(collection, doc: dict):
-    """Insert a document using a real PyMongo collection if available,
-    otherwise emulate insert_one for lightweight FakeCollection objects
-    used in tests.
-
-    Returns an object with an `inserted_id` attribute.
-    """
-    # Prefer real insert_one when present
     insert = getattr(collection, "insert_one", None)
     if callable(insert):
         return insert(doc)
 
-    # Fallback for FakeCollection objects used in tests: append to .docs
     docs = getattr(collection, "docs", None)
     if docs is None:
         raise AttributeError("Collection does not support insert_one and has no .docs fallback")
 
-    # Ensure we don't mutate caller's dict
     new_doc = dict(doc)
     if "_id" not in new_doc:
         new_doc["_id"] = ObjectId()

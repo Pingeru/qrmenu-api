@@ -68,7 +68,6 @@ def authenticate_request():
                     except Exception:
                         user_doc = None
         except Exception:
-            # Import or lookup failed; fall through to not found
             user_doc = None
 
     if not user_doc:

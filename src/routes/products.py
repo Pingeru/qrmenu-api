@@ -179,7 +179,6 @@ def create_product():
     if is_active is None:
         is_active = True
 
-    # image upload is optional on create; it can be added later via update
 
     product_doc = {
         "business_id": business_id,
@@ -197,7 +196,6 @@ def create_product():
     try:
         result = safe_insert(products, product_doc)
         inserted_id = result.inserted_id
-        # Save image only if provided
         if image_file and image_file.filename:
             image_path = _save_image(str(inserted_id), image_file)
             products.update_one({"_id": inserted_id}, {"$set": {"image_path": image_path}})
@@ -252,7 +250,6 @@ def list_products():
         return jsonify({"error": "Database error occurred"}), 500
 
     return jsonify({"products": [_serialize_product(product) for product in product_docs]}), 200
-
 
 
 

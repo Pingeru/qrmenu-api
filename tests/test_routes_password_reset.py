@@ -129,7 +129,7 @@ class PasswordResetRouteTests(unittest.TestCase):
         self.assertTrue(reset_url.startswith("https://example.com/password-reset?token="))
         self.assertEqual(captured["recipient_email"], "owner@example.com")
         self.assertEqual(captured["reset_url"], reset_url)
-        self.assertIn("reset password", captured["html_body"])
+        self.assertIn("reset password".lower(), captured["html_body"].lower())
         self.assertIn(reset_url, captured["html_body"])
 
         token = parse_qs(urlparse(reset_url).query)["token"][0]

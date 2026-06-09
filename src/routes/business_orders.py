@@ -112,7 +112,6 @@ def list_business_orders():
     if auth_error:
         return auth_error
 
-    # Default time window: last 12 hours
     now = dt.datetime.now(dt.UTC)
     default_cutoff = now - dt.timedelta(hours=12)
 

@@ -4,7 +4,6 @@ import pytest
 
 load_dotenv()
 
-# Global MongoDB client to be shared across all test sessions
 _mongo_client = None
 _db = None
 
@@ -19,14 +18,12 @@ def mongo_setup():
         _mongo_client = client
         _db = db
 
-        # Test connection
         _mongo_client.admin.command("ping")
     except Exception as exc:
         pytest.skip(f"Mongo unavailable: {exc}")
 
     yield
 
-    # Don't close the client here - let it persist for all tests
 
 
 def pytest_configure(config):
@@ -38,10 +35,9 @@ def pytest_configure(config):
         _mongo_client = client
         _db = db
 
-        # Verify connection
         _mongo_client.admin.command("ping")
     except Exception as exc:
-        pass  # Will be skipped in individual tests
+        pass
 
 
 @pytest.fixture(autouse=True)

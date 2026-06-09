@@ -19,7 +19,6 @@ class AuthRouteTests(unittest.TestCase):
         cls.businesses = db["businesses"]
         cls.users = db["users"]
 
-        # Test MongoDB connection
         try:
             cls.mongo_client.admin.command("ping")
         except Exception as exc:
@@ -27,7 +26,7 @@ class AuthRouteTests(unittest.TestCase):
 
     @classmethod
     def tearDownClass(cls):
-        pass  # MongoDB client is managed by conftest.py
+        pass
 
     def setUp(self):
         self.created_business_emails = []
