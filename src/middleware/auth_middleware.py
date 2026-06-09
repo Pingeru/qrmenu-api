@@ -50,6 +50,28 @@ def authenticate_request():
         return jsonify({"error": "Database error occurred"}), 500
 
     if not user_doc:
+        try:
+            import importlib
+
+            if user_type == "business":
+                mod = importlib.import_module("src.routes.business_auth")
+                alt_coll = getattr(mod, "businesses", None)
+            else:
+                mod = importlib.import_module("src.routes.client_auth")
+                alt_coll = getattr(mod, "users", None)
+
+            if alt_coll is not None:
+                alt_find = getattr(alt_coll, "find_one", None)
+                if callable(alt_find):
+                    try:
+                        user_doc = alt_find({"_id": mongo_id})
+                    except Exception:
+                        user_doc = None
+        except Exception:
+            # Import or lookup failed; fall through to not found
+            user_doc = None
+
+    if not user_doc:
         return jsonify({"error": "User not found"}), 401
 
     user_doc["_id"] = str(user_doc["_id"])

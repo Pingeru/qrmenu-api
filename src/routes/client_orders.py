@@ -6,7 +6,7 @@ from nanoid import generate
 from pymongo.errors import PyMongoError
 
 from src.middleware.auth_middleware import authenticate_request
-from src.utils.database_helper import db
+from src.utils.database_helper import db, safe_insert
 
 client_orders_bp = Blueprint("client_orders", __name__)
 
@@ -135,7 +135,7 @@ def create_order():
     }
 
     try:
-        result = orders.insert_one(order_doc)
+        result = safe_insert(orders, order_doc)
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 

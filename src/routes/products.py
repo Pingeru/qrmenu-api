@@ -7,7 +7,7 @@ from nanoid import generate
 from pymongo.errors import PyMongoError
 
 from src.middleware.auth_middleware import authenticate_request
-from src.utils.database_helper import db
+from src.utils.database_helper import db, safe_insert
 
 products_bp = Blueprint("products", __name__)
 
@@ -195,7 +195,7 @@ def create_product():
     inserted_id = None
     image_path = None
     try:
-        result = products.insert_one(product_doc)
+        result = safe_insert(products, product_doc)
         inserted_id = result.inserted_id
         # Save image only if provided
         if image_file and image_file.filename:

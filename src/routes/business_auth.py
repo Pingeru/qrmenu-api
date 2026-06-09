@@ -19,7 +19,7 @@ from src.utils.auth_helper import (
     verify_password,
 )
 from src.utils.password_reset_helper import send_password_reset_email
-from src.utils.database_helper import db
+from src.utils.database_helper import db, safe_insert
 
 business_auth_bp = Blueprint("business_auth", __name__)
 
@@ -73,7 +73,7 @@ def register_business():
             "password_hash": hash_password(password),
             "created_at": dt.datetime.now(dt.UTC),
         }
-        result = businesses.insert_one(business_doc)
+        result = safe_insert(businesses, business_doc)
     except PyMongoError as exc:
         if current_app.testing:
             return jsonify({"error": "Database error occurred", "details": str(exc)}), 500

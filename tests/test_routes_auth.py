@@ -19,6 +19,12 @@ class AuthRouteTests(unittest.TestCase):
         cls.businesses = db["businesses"]
         cls.users = db["users"]
 
+        # Test MongoDB connection
+        try:
+            cls.mongo_client.admin.command("ping")
+        except Exception as exc:
+            raise unittest.SkipTest(f"Mongo unavailable: {exc}") from exc
+
     @classmethod
     def tearDownClass(cls):
         pass  # MongoDB client is managed by conftest.py

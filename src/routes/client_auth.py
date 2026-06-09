@@ -17,7 +17,7 @@ from src.utils.auth_helper import (
     verify_password,
 )
 from src.utils.password_reset_helper import send_password_reset_email
-from src.utils.database_helper import db
+from src.utils.database_helper import db, safe_insert
 
 client_auth_bp = Blueprint("client_auth", __name__)
 
@@ -49,7 +49,7 @@ def register_client():
             "password_hash": hash_password(password),
             "created_at": dt.datetime.now(dt.UTC),
         }
-        result = users.insert_one(user_doc)
+        result = safe_insert(users, user_doc)
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 

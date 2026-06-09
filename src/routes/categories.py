@@ -6,7 +6,7 @@ from pymongo.errors import PyMongoError
 
 from src.middleware.auth_middleware import authenticate_request
 from src.routes.products import delete_product_entry
-from src.utils.database_helper import db
+from src.utils.database_helper import db, safe_insert
 
 categories_bp = Blueprint("categories", __name__)
 
@@ -100,7 +100,7 @@ def create_category():
     }
 
     try:
-        result = categories.insert_one(category_doc)
+        result = safe_insert(categories, category_doc)
     except PyMongoError:
         return jsonify({"error": "Database error occurred"}), 500
 
